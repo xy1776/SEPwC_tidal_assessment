@@ -1,7 +1,7 @@
 import pytest
 import sys
 sys.path.insert(0,"../")
-sys.path.insert(0,"../working_example")
+sys.path.insert(0,"./")
 from tidal_analysis import *
 from pylint.lint import Run
 from pylint.reporters import CollectingReporter
@@ -11,7 +11,7 @@ import pandas as pd
 class TestTidalAnalysis():
     
     def test_reading_data(self):
-        tidal_file = "../data/1947ABE.txt"
+        tidal_file = "data/1947ABE.txt"
         
         data = read_tidal_data(tidal_file)
         assert "Sea Level" in data.columns
@@ -32,7 +32,7 @@ class TestTidalAnalysis():
     
     def test_join_data(self):
 
-        gauge_files = ['../data/1946ABE.txt', '../data/1947ABE.txt']
+        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -49,13 +49,11 @@ class TestTidalAnalysis():
         # check you get a fail if two incompatible dfs are given
         data2.drop(columns=["Sea Level","Time"], inplace=True)
         data = join_data(data1, data2)
-        print(data)
-
         
 
     def test_extract_year(self):
         
-        gauge_files = ['../data/1946ABE.txt', '../data/1947ABE.txt']
+        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -74,7 +72,7 @@ class TestTidalAnalysis():
 
     def test_extract_section(self):
 
-        gauge_files = ['../data/1946ABE.txt', '../data/1947ABE.txt']
+        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -102,7 +100,7 @@ class TestTidalAnalysis():
 
     def test_correct_tides(self):
 
-        gauge_files = ['../data/1946ABE.txt', '../data/1947ABE.txt']
+        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
         data = join_data(data1, data2)
@@ -121,7 +119,7 @@ class TestTidalAnalysis():
 
     def test_linear_regression(self):
 
-        gauge_files = ['../data/1946ABE.txt', '../data/1947ABE.txt']
+        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
         data = join_data(data1, data2)
@@ -133,7 +131,7 @@ class TestTidalAnalysis():
         
 
     def test_lint(self):
-        files =  ["../working_example/tidal_analysis.py"]
+        files =  ["tidal_analysis.py"]
         #pylint_options = ["--disable=line-too-long,import-error,fixme"]
         pylint_options = []
 
@@ -163,5 +161,23 @@ class TestTidalAnalysis():
         assert score > 7
         assert score > 9
 
+class TestRegression():
 
+    def test_whitby_regression(self):
+
+        from subprocess import run
+        result = run(["python3","tidal_analysis.py","data/whitby"], capture_output=True, check=True)
+        assert len(result.stdout) > 25
+
+    def test_aberdeen_regression(self):
+
+        from subprocess import run
+        result = run(["python3","tidal_analysis.py","data/aberdeen"], capture_output=True, check=True)
+        assert len(result.stdout) > 25
+
+    def test_dover_regression(self):
+
+        from subprocess import run
+        result = run(["python3","tidal_analysis.py","data/dover"], capture_output=True, check=True)
+        assert len(result.stdout) > 25
 
