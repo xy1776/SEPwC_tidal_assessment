@@ -33,7 +33,6 @@ The regression tests check the whole code:
 pytest test/test_tides.py::TestRegression
 ```
 
-
 ## The data
 
 There are three directories with data for Whitby, Aberdeen and Dover for the years
@@ -95,3 +94,18 @@ it easier to work out the rise per day and multiply by 365 to get metres per yea
 `uptide` can calculate the tidal constuents, but any `nan` (i.e missing data) must be 
 removed prior to working out tidal constiuents. 
 
+
+## The rules
+
+You cannot alter any of the assert comments in `test/test_tides.py`
+
+If you alter any function names in the main code, you *can* alter the name
+in the test file to match; however the rest of the test must remain unchanged. 
+This will be checked.
+
+If you wish to add more tests, please do, but place them in a separate file
+in the `test` directory. Remember to name the file `test_something.py`. You must
+also make sure the `class` name(s) are different to those in `test/test_tides.py`.
+
+You can also add extra functionality, but the command-line interface must pass
+the tests set.

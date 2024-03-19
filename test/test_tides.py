@@ -146,8 +146,8 @@ class TestTidalAnalysis():
 
         print("Score: " + str(score))
         line_format = "{path}:{line}:{column}: {msg_id}: {msg} ({symbol})"
-        #for error in report.messages:
-        #    print(line_format.format(**asdict(error)))   
+        for error in report.messages:
+            print(line_format.format(**asdict(error)))   
 
         assert nErrors < 500
         assert nErrors < 400
@@ -166,13 +166,13 @@ class TestRegression():
     def test_whitby_regression(self):
 
         from subprocess import run
-        result = run(["python3","tidal_analysis.py","data/whitby"], capture_output=True, check=True)
+        result = run(["python3","tidal_analysis.py","-v","data/whitby"], capture_output=True, check=True)
         assert len(result.stdout) > 25
 
     def test_aberdeen_regression(self):
 
         from subprocess import run
-        result = run(["python3","tidal_analysis.py","data/aberdeen"], capture_output=True, check=True)
+        result = run(["python3","tidal_analysis.py","--verbose","data/aberdeen"], capture_output=True, check=True)
         assert len(result.stdout) > 25
 
     def test_dover_regression(self):
