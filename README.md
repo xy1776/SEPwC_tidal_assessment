@@ -2,15 +2,15 @@
 
 ## Introduction
 
-Your task is to write code to read in multiple tidal data files for a single
-tidal station. You should then calculate the M2 and S2 tidal components
-and also the rate of sea-level rise per year.
+Your task is to write code to read in multiple tidal data files (each a different year) 
+for a single tidal station. You should then calculate the M2 and S2 tidal components
+and also the rate of sea-level rise per year, for that station.
 
 ## The tests
 
 The test suite uses two data files from the 1940's from the
 Aberdeen tide gauge station. The test will check reading in these
-data, joining multiple years and calculating tidal constiuents.
+data, joining multiple years and calculating tidal constituents.
 
 You can run the tests by running `pytest` or `pytest test/test_tides.py`
 from the main directory. Try it now, before you make any changes!
@@ -44,11 +44,11 @@ python3 tidal_analysis.py data/whitby
 ```
 
 for example. The program should print the tidal data, the sea-level rise and
-the longest contiguous period of data (i.e. wihtout any missing data) from 
+the longest contiguous period of data (i.e. without any missing data) from 
 the data loaded. 
 
 Each file in the folder contains the tidal elevation and residual for a year.
-There are records every 15 to 60 minutes. The files is lid out liek this:
+There are records every 15 to 60 minutes. The files are laid out like this:
 
 ```bash
 Port:              P038
