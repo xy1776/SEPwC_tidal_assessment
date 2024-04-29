@@ -94,6 +94,8 @@ it easier to work out the rise per day and multiply by 365 to get metres per yea
 `uptide` can calculate the tidal constuents, but any `nan` (i.e missing data) must be 
 removed prior to working out tidal constiuents. 
 
+To search for files of a certain type within a directory, use the ``glob`` module. 
+
 
 ## The rules
 
