@@ -37,13 +37,13 @@ pytest test/test_tides.py::TestRegression
 
 There are three directories with data for Whitby, Aberdeen and Dover for the years
 2000 to 2019. Your code must be able to read in all the data files in one of those
-directories and perform the analysis. You should be able to run:
+directories and perform the analysis by the user suppying the folder. You should be able to run:
 
 ```bash
 python3 tidal_analysis.py data/whitby
 ```
 
-for example. The program should print the tidal data, the sea-level rise and
+for example to calculate the stats for Whitby. The program should print the tidal data, the sea-level rise and
 the longest contiguous period of data (i.e. without any missing data) from 
 the data loaded. 
 
