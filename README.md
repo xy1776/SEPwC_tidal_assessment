@@ -96,6 +96,15 @@ removed prior to working out tidal constiuents.
 
 To search for files of a certain type within a directory, use the ``glob`` module. 
 
+Regular experssions might be useful for removing the dodgy values (`N`, `M`, `T`), so
+something like:
+
+```python
+my_data.replace(to_replace=".*M$",value={'A':np.nan},regex=True,inplace=True)
+```
+will replace any value ending in M in the column `A` in the pandas dataframe `my_data`. 
+Note I've done this `inplace` so I don't need to reassign into another variable.
+
 
 ## The rules
 
