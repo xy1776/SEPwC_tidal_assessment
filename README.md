@@ -105,6 +105,11 @@ my_data.replace(to_replace=".*M$",value={'A':np.nan},regex=True,inplace=True)
 will replace any value ending in M in the column `A` in the pandas dataframe `my_data`. 
 Note I've done this `inplace` so I don't need to reassign into another variable.
 
+To convert datetimes to numbers to do a linear regression (see above), there are a few ways, 
+but using the [`date2num`](https://matplotlib.org/stable/api/dates_api.html#matplotlib.dates.date2num)
+function in `matplotlib.dates`, which converts a datetime
+to the number of days since 01-01-1970. 
+
 
 ## The rules
 
