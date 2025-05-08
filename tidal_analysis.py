@@ -4,6 +4,13 @@
 import argparse
 
 def read_tidal_data(filename):
+    """ Function:read the tidal data form the file.
+    
+        Input-data file
+        Returen-nothing
+    """
+    
+        
 
     return 0
     
