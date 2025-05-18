@@ -52,26 +52,28 @@ def extract_single_year_remove_mean(year, data):
     
     year_start = pd.to_datetime(year_start_str)
     year_end = pd.to_datetime(year_end_str)
-    try: 
-        year_data = data.loc[year_start:year_end, ['Sea Level']].copy()
-    except KeyError:
-        print("Error: 'Sea Level' column not found in the input DataFrame.")
-        return None
-    except AttributeError:
-        print("Error: Input 'data' is not a valid Pandas DataFrame.")
-        return None
     
-    #calculated the mean of 'Sea Level', excluding NaN 
-    tide_mean = year_data ['Sea Level'].mean(skipna=True)
+    if data is None:
+        return pd.DataFrame(columns=['Sea Level']).set_index(pd.DatetimeIndex([]))
+ 
+    #creat full datetime range for the entire year
+    year_start = pd.to_datetime(f"{year}-01-01 00:00:00")
+    year_end = pd.to_datetime(f"{year}-12-31 23:00:00")
+    full_index = pd.date_range(start=year_start, end=year_end, freq='h')
     
-    #Impute NaN values with the calculated mean
-    year_data['Sea Level'] = year_data['Sea Level'].fillna(tide_mean)
+    #keep the range to full 8760 hour 
+    year_data = data.loc[year_start:year_end, ['Sea Level']].copy()
+    year_data = year_data.reindex(full_index)
     
-    #Substract the mean from the imputed data
-    year_data['Sea Level'] -= tide_mean
-
+    #fill missing values with mean
+    tide_mean = year_data['Sea Level'].mean(skipna=True)
+    year_data['Sea Leve'] = year_data['Sea Level'].fillna(tide_mean)
+    
+    #rmove the mean
+    year_data['Sea Level'] = year_data['Sea Level'] - tide_mean
+    
     return year_data
-
+  
 def extract_section_remove_mean(start, end, data):
 
 
