@@ -19,21 +19,24 @@ def read_tidal_data(filename):
                           'Sea Level' column (as float). Returns None if the
                           file is not found or an error occurs.
     """
-    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=10)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
+    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=11)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
    
-    #clean and convert "ASLVZZ01" column. 
-    tide_data[4] = tide_data[4].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False) #Remove M and N
-    tide_data[4] = tide_data[4].astype(str).str.replace('-99.0000', np.nan) #replace missing values
+    #clean and convert "ASLVZZ01" and 'Residual' column. 
+    tide_data[3] = tide_data[3].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False).str.replace(r'^\s*\d+\)\s*', '', regex=True) #Remove M and N
+    tide_data[3] = tide_data[3].replace('-99.0000', np.nan) #replace missing values
+    tide_data[3] = pd.to_numeric(tide_data[3], errors='coerce') #convert to numeric
+    tide_data[4] = tide_data[4].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False).str.replace(r'^\s*\d+\)\s*', '', regex=True) #Remove M and N
+    tide_data[4] = tide_data[4].replace('-99.0000', np.nan) #replace missing values
     tide_data[4] = pd.to_numeric(tide_data[4], errors='coerce') #convert to numeric
-    
     # Rename colums
-    tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 4: 'Sea Level'})
+    tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 3: 'Sea Level', 4: 'Residual'})
     
-    tide_data['Datetime'] = pd.to_datetime(tide_data['Date'] + ' ' + tide_data['Time'])
+    #creat 'Datetime' column and set as index 
+    tide_data['Datetime'] = pd.to_datetime(tide_data['Date'].str.strip() + ' ' + tide_data['Time'].str.strip(), format='%Y/%m/%d %H:%M:%S')
     tide_data = tide_data.set_index('Datetime')
     
     #drop unecessary columns
-    tide_data = tide_data.drop(columns=[0, 3, 5])
+    tide_data = tide_data.drop(columns=[0])
     
     return tide_data
     
