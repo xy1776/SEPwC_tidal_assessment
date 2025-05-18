@@ -19,7 +19,7 @@ def read_tidal_data(filename):
                           'Sea Level' column (as float). Returns None if the
                           file is not found or an error occurs.
     """
-    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=9)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
+    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=10)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
    
     #clean and convert "ASLVZZ01" column. 
     tide_data[4] = tide_data[4].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False) #Remove M and N
@@ -29,11 +29,11 @@ def read_tidal_data(filename):
     # Rename colums
     tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 4: 'Sea Level'})
     
-    tide_data['Datetime'] = pd.to_datetime(tide-data['Date'] + ' ' + tide_data['Time'])
+    tide_data['Datetime'] = pd.to_datetime(tide_data['Date'] + ' ' + tide_data['Time'])
     tide_data = tide_data.set_index('Datetime')
     
     #drop unecessary columns
-    tide_data = tide_data.drop(clumns=[0, 3, 5])
+    tide_data = tide_data.drop(columns=[0, 3, 5])
     
     return tide_data
     
