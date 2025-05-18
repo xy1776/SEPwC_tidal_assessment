@@ -14,27 +14,28 @@ import pytz #A library for working with time zones in Python.
 def read_tidal_data(filename):
     """ Function:read the tidal data form the txt file.
     
-        Input-data the tidal data txt file. 
-        Returen-A DataFrame with a DatetimeIndex ('Date') and a
-                'Sea Level' column (as float). Returns None if the
-                file is not found.
+        Input-data the path to tidal data txt file. 
+        Returen-pandas.DataFrame: A DataFrame with a DatetimeIndex ('Datetime') and a
+                          'Sea Level' column (as float). Returns None if the
+                          file is not found or an error occurs.
     """
-    tide_data = pd.read_csv(filename,sep='\s+', header=None)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
-    tide_data['Date'] = pd.to_datetime(dict(year=tide_data[0], month=tide_data[1], day=tide_data[2], hour=tide_data[3]))
-    # 0 is year, 1 is month, 2 is day, 3 is time. 
-    tide_data = tide_data.drop([0,1,2,3], axis = 1)
-    tide_data = tide_data.rename(columns={4: "Tide"})
+    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=9)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
+   
+    #clean and convert "ASLVZZ01" column. 
+    tide_data[4] = tide_data[4].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False) #Remove M and N
+    tide_data[4] = tide_data[4].astype(str).str.replace('-99.0000', np.nan) #replace missing values
+    tide_data[4] = pd.to_numeric(tide_data[4], errors='coerce') #convert to numeric
     
-    # Replace 'M', 'N', 'T' with NaN in the 'Tide' cloumn. 
-    tide_data.replace(to_replace="^M$", value=np.nan, regex=True, inplace=True)
-    tide_data.replace(to_replace="^N$", value=np.nan, regex=True, inplace=True)
-    tide_data.replace(to_replace="^T$", value=np.nan, regex=True, inplace=True)
+    # Rename colums
+    tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 4: 'Sea Level'})
     
-    tide_data = tide_data.set_index('Date')
-    tide_data = tide_data.mask(tide_data['Tide'] < -300)
-    # handle potentially erroneous or out-of-range tide readings.
+    tide_data['Datetime'] = pd.to_datetime(tide-data['Date'] + ' ' + tide_data['Time'])
+    tide_data = tide_data.set_index('Datetime')
     
-    return 0
+    #drop unecessary columns
+    tide_data = tide_data.drop(clumns=[0, 3, 5])
+    
+    return tide_data
     
 def extract_single_year_remove_mean(year, data):
    
