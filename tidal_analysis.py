@@ -22,12 +22,11 @@ def read_tidal_data(filename):
     tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=11)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
    
     #clean and convert "ASLVZZ01" and 'Residual' column. 
-    tide_data[3] = tide_data[3].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False).str.replace(r'^\s*\d+\)\s*', '', regex=True) #Remove M and N
-    tide_data[3] = tide_data[3].replace('-99.0000', np.nan) #replace missing values
-    tide_data[3] = pd.to_numeric(tide_data[3], errors='coerce') #convert to numeric
-    tide_data[4] = tide_data[4].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False).str.replace(r'^\s*\d+\)\s*', '', regex=True) #Remove M and N
-    tide_data[4] = tide_data[4].replace('-99.0000', np.nan) #replace missing values
-    tide_data[4] = pd.to_numeric(tide_data[4], errors='coerce') #convert to numeric
+    for col in [3, 4]:
+        tide_data[col] = tide_data[col].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False)
+        tide_data[col] = tide_data[col].replace('-99.0000', np.nan)
+        tide_data[col] = pd.to_numeric(tide_data[col], errors='coerce')
+    
     # Rename colums
     tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 3: 'Sea Level', 4: 'Residual'})
     
@@ -41,10 +40,37 @@ def read_tidal_data(filename):
     return tide_data
     
 def extract_single_year_remove_mean(year, data):
-   
+    """ Function: extract single year's data and remove the mean. 
+    
+        Input: year and data
+        Returen: A new Pandas DataFrame containing: A DatetimeIndex spanning the
+                entirety of the specified year 
+                based on the data available for that year.
+    """
+    year_start_str = f'{year}-01-01'
+    year_end_str = f'{year}-12-31'
+    
+    year_start = pd.to_datetime(year_start_str)
+    year_end = pd.to_datetime(year_end_str)
+    try: 
+        year_data = data.loc[year_start:year_end, ['Sea Level']].copy()
+    except KeyError:
+        print("Error: 'Sea Level' column not found in the input DataFrame.")
+        return None
+    except AttributeError:
+        print("Error: Input 'data' is not a valid Pandas DataFrame.")
+        return None
+    
+    #calculated the mean of 'Sea Level', excluding NaN 
+    tide_mean = year_data ['Sea Level'].mean(skipna=True)
+    
+    #Impute NaN values with the calculated mean
+    year_data['Sea Level'] = year_data['Sea Level'].fillna(tide_mean)
+    
+    #Substract the mean from the imputed data
+    year_data['Sea Level'] -= tide_mean
 
-    return 
-
+    return year_data
 
 def extract_section_remove_mean(start, end, data):
 
@@ -53,11 +79,29 @@ def extract_section_remove_mean(start, end, data):
 
 
 def join_data(data1, data2):
+    """ Function: joins two tidal data DataFrames. 
 
-    return 
-
-
-
+    Input:data1 and data2 
+    Returen: pd.DataFrame: A new DataFrame containing the joined data, 
+            or None if either input is None.
+        
+    """
+    if data1 is None or data2 is None:
+        print("[join_data] One or both input datasets are None")
+        return None
+    if not isinstance(data1, pd.DataFrame) or not isinstance(data2, pd.DataFrame):
+        print("[join_data] One or both inputs area not vlid DataFrames")
+        return None
+    try:
+        combined = pd.concat([data1, data2])
+        combined = combined[~combined.index.duplicated(keep='first')]
+        combined = combined.sort_index()
+        return combined
+    
+    except Exception as e:
+        print(f"[join_data] Error while joining data:{e}")
+        return None
+    
 def sea_level_rise(data):
 
                                                      
