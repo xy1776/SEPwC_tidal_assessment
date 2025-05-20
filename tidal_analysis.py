@@ -11,12 +11,13 @@ import numpy as np #The fundamental package for numerical computation in Python.
 import uptide #A Python package specifically designed for tidal analysis and prediction.
 import math #Includes functions for arithmetic operations, logarithms, trigonometric functions, etc.
 import pytz #A library for working with time zones in Python.
+from scipy.stats import linregress
 
 def read_tidal_data(filename):
     """ Function:read the tidal data form the txt file.
     
         Input-data the path to tidal data txt file. 
-        Returen-pandas.DataFrame: A DataFrame with a DatetimeIndex ('Datetime') and a
+        Return-pandas.DataFrame: A DataFrame with a DatetimeIndex ('Datetime') and a
                           'Sea Level' column (as float). Returns None if the
                           file is not found or an error occurs.
     """
@@ -49,7 +50,7 @@ def extract_single_year_remove_mean(year, data):
     """ Function: extract single year's data and remove the mean. 
     
         Input: year and data
-        Returen: A new Pandas DataFrame containing: A DatetimeIndex spanning the
+        Return: A new Pandas DataFrame containing: A DatetimeIndex spanning the
                 entirety of the specified year 
                 based on the data available for that year.
     """
@@ -90,7 +91,7 @@ def join_data(data1, data2):
     """ Function: joins two tidal data DataFrames. 
 
     Input:data1 and data2 
-    Returen: pd.DataFrame: A new DataFrame containing the joined data, 
+    Return: pd.DataFrame: A new DataFrame containing the joined data, 
             or None if either input is None.
         
     """
@@ -111,9 +112,42 @@ def join_data(data1, data2):
         return None
     
 def sea_level_rise(data):
-
-                                                     
-    return 
+    """ Function: calculating and show the figure for the long_term trend in sea level.
+    
+        Input: Time series data for 'Sea Level'
+        Return: The slop and linear trend line. 
+    """ 
+    plot_data = data.copy()
+    
+    #Drop Sea level is NaN
+    plot_data = plot_data.dropna(subset=['Sea Level'])
+    
+    #creat a time valu for liner regression
+    time_numeric = (plot_data.index - plot_data.index.min()).total_seconds() / (3600*24)
+    
+    #linear regression
+    slope, intercept, r_value, p_value, std_err = linregress(time_numeric, plot_data['Sea Level'])
+    trend_line = slope*time_numeric + intercept
+    
+    #convert the unitr for slop from m/day to mm/year
+    slope_mm_per_year = slope * 365.25 * 1000
+    
+    #seting for figures. 
+    fig_Sea_Level=plt.figure()
+    ax=fig_Sea_Level.add_subplot(111)
+    ax.plot(plot_data.index, plot_data['Sea Level'], color="blue", lw=1, label="Sea Level Data for Aberdeen")
+    ax.plot(plot_data.index, trend_line, color="red", linestyle='--', lw=1, label=f"Long_term Trend({slope_mm_per_year:.2f} mm/year)")
+    ax.set_xlabel("Datetime")
+    ax.set_ylabel("Sea Level (m)")
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend()
+    ax.set_xlim(plot_data.index.min(), plot_data.index.max())
+    ax.set_title("Sea Level Trend Analysis")
+    
+    fig_Sea_Level.tight_layout()
+    plt.show()
+    
+    return slope_mm_per_year, intercept
 
 def tidal_analysis(data, constituents, start_datetime):
 
