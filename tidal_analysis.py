@@ -5,6 +5,7 @@ import argparse
 import pandas as pd #useful for reading, manipulating, and analyzing tabular data, like CSV files or time series.
 import matplotlib.pyplot as plt #use for  generating figures
 import datetime #use for create , manipulate and format data and time objects
+from datetime import timedelta
 import os # use for interacting with the file system - check files path
 import numpy as np #The fundamental package for numerical computation in Python.
 import uptide #A Python package specifically designed for tidal analysis and prediction.
@@ -19,16 +20,21 @@ def read_tidal_data(filename):
                           'Sea Level' column (as float). Returns None if the
                           file is not found or an error occurs.
     """
-    tide_data = pd.read_csv(filename,sep='\s+', header=None, skiprows=11)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
+    tide_data = pd.read_csv(filename,sep=r'\s+', header=None, skiprows=11)# 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
    
+    # Rename colums
+    tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 3: 'Sea Level', 4: 'Residual'})
+    
+    # Clean and convert 'Date' and 'Time' colums
+    tide_data['Date'] = tide_data['Date'].astype(str).str.strip()
+    tide_data['Time'] = tide_data['Time'].astype(str).str.strip()
+    
     #clean and convert "ASLVZZ01" and 'Residual' column. 
-    for col in [3, 4]:
+    for col in ['Sea Level', 'Residual']:
         tide_data[col] = tide_data[col].astype(str).str.replace('M', '', regex=False).str.replace('N', '', regex=False)
         tide_data[col] = tide_data[col].replace('-99.0000', np.nan)
         tide_data[col] = pd.to_numeric(tide_data[col], errors='coerce')
-    
-    # Rename colums
-    tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 3: 'Sea Level', 4: 'Residual'})
+        
     
     #creat 'Datetime' column and set as index 
     tide_data['Datetime'] = pd.to_datetime(tide_data['Date'].str.strip() + ' ' + tide_data['Time'].str.strip(), format='%Y/%m/%d %H:%M:%S')
@@ -47,38 +53,38 @@ def extract_single_year_remove_mean(year, data):
                 entirety of the specified year 
                 based on the data available for that year.
     """
-    year_start_str = f'{year}-01-01'
-    year_end_str = f'{year}-12-31'
+    year_string_start = str(year)+"0101"
+    year_string_end = str(year)+"1231" 
+    year_data = data.loc[year_string_start:year_string_end, ['Sea Level']]
     
-    year_start = pd.to_datetime(year_start_str)
-    year_end = pd.to_datetime(year_end_str)
-    
-    if data is None:
-        return pd.DataFrame(columns=['Sea Level']).set_index(pd.DatetimeIndex([]))
- 
-    #creat full datetime range for the entire year
-    year_start = pd.to_datetime(f"{year}-01-01 00:00:00")
-    year_end = pd.to_datetime(f"{year}-12-31 23:00:00")
-    full_index = pd.date_range(start=year_start, end=year_end, freq='h')
-    
-    #keep the range to full 8760 hour 
-    year_data = data.loc[year_start:year_end, ['Sea Level']].copy()
-    year_data = year_data.reindex(full_index)
-    
-    #fill missing values with mean
-    tide_mean = year_data['Sea Level'].mean(skipna=True)
-    year_data['Sea Leve'] = year_data['Sea Level'].fillna(tide_mean)
-    
-    #rmove the mean
-    year_data['Sea Level'] = year_data['Sea Level'] - tide_mean
+    #remove mean 
+    mmm = np.mean(year_data['Sea Level'])
+    year_data['Sea Level'] -=mmm
     
     return year_data
   
 def extract_section_remove_mean(start, end, data):
+    """ Function: extract data within a period of time and remove the mean.
 
+        Input: start time, end time and data
+        Return: Anew Pandas DataFrame containing: A DatetimeIndex spanning the 
+            entirety of the specified period of time based on the data available 
+            for that time. 
+    """
+    #select the time range, start:YYYY/MM/DD/00:00:00, end: YYYY/MM/DD/00:00:00
+    start_datetime = pd.to_datetime(start)
+    end_datetime = pd.to_datetime(end)
+    
+    #add 23 hour make sure the end time for the calculation was YYYY/MM/DD 23:00:00. 
+    end_datetime += timedelta(hours=23)
 
-    return 
-
+    section_data = data.loc[start_datetime:end_datetime, ['Sea Level']]
+    
+    #calculated the mean and remove it
+    mmm = np.mean(section_data['Sea Level'])
+    section_data['Sea Level'] -=mmm
+        
+    return section_data
 
 def join_data(data1, data2):
     """ Function: joins two tidal data DataFrames. 
