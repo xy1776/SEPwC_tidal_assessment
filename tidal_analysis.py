@@ -122,32 +122,36 @@ def sea_level_rise(data):
     #Drop Sea level is NaN
     plot_data = plot_data.dropna(subset=['Sea Level'])
     
-    #creat a time valu for liner regression
-    time_numeric = (plot_data.index - plot_data.index.min()).total_seconds() / (3600*24)
+    # ensure data was joined by time order
+    plot_data = plot_data.sort_index()
+    
+    print(plot_data['Sea Level'].describe())
+            
+    #creat a time valu for liner regression (m/hour)
+    time_deltas = plot_data.index - plot_data.index[0]
+    time_hour = time_deltas.total_seconds() / 3600
     
     #linear regression
-    slope, intercept, r_value, p_value, std_err = linregress(time_numeric, plot_data['Sea Level'])
-    trend_line = slope*time_numeric + intercept
-    
-    #convert the unitr for slop from m/day to mm/year
-    slope_mm_per_year = slope * 365.25 * 1000
+    slope, intercept, r_value, p_value, std_err = linregress(time_hour, plot_data['Sea Level'])
+    trend_line = slope*time_hour + intercept
+    print("Slope:", slope)
     
     #seting for figures. 
     fig_Sea_Level=plt.figure()
     ax=fig_Sea_Level.add_subplot(111)
-    ax.plot(plot_data.index, plot_data['Sea Level'], color="blue", lw=1, label="Sea Level Data for Aberdeen")
-    ax.plot(plot_data.index, trend_line, color="red", linestyle='--', lw=1, label=f"Long_term Trend({slope_mm_per_year:.2f} mm/year)")
+    ax.plot(plot_data.index, plot_data['Sea Level'], color="blue", lw=1, label="Sea Level Data for Aberdeen(m)")
+    ax.plot(plot_data.index, trend_line, color="red", linestyle='-', lw=1, label=f"Long_term Trend({slope:.2f} m/hour)")
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Sea Level (m)")
     ax.tick_params(axis='x', rotation=45)
     ax.legend()
     ax.set_xlim(plot_data.index.min(), plot_data.index.max())
-    ax.set_title("Sea Level Trend Analysis")
+    ax.set_title("Sea Level Trend Analysis (m/hour)")
     
-    fig_Sea_Level.tight_layout()
-    plt.show()
+    # fig_Sea_Level.tight_layout()
+    # plt.show() #
     
-    return slope_mm_per_year, intercept
+    return slope, p_value
 
 def tidal_analysis(data, constituents, start_datetime):
 
