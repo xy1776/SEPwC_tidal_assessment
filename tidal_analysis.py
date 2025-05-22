@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+"""
+This module provides functions for reading, manipulating, and analyzing tidal gauge 
+including calculating long-term sea level trends and performing harmonic analysis
+to extract tidal constituents.
+"""
 
 # import the modules you need here
 import argparse
 import pandas as pd #useful for reading, manipulating, and analyzing tabular data, like CSV files or time series.
 import matplotlib.pyplot as plt #use for  generating figures
-import datetime #use for create , manipulate and format data and time objects
+import datetime
+import wget
 from datetime import timedelta
-import os # use for interacting with the file system - check files path
 import numpy as np #The fundamental package for numerical computation in Python.
 import uptide #A Python package specifically designed for tidal analysis and prediction.
-import math #Includes functions for arithmetic operations, logarithms, trigonometric functions, etc.
-import pytz #A library for working with time zones in Python.
+import pytz
 from scipy.stats import linregress
 
 def read_tidal_data(filename):
@@ -138,7 +142,7 @@ def sea_level_rise(data):
     fig_Sea_Level=plt.figure()
     ax=fig_Sea_Level.add_subplot(111)
     ax.plot(plot_data.index, plot_data['Sea Level'], color="blue", lw=1, label="Sea Level Data for Aberdeen(m)")
-    ax.plot(plot_data.index, trend_line, color="red", linestyle='-', lw=1, label=f"Long_term Trend({slope:.2f} m/hour)")
+    ax.plot(plot_data.index, trend_line, color="red", linestyle='-', lw=1, label=f"Long_term Trend({slope:.2e} m/hour)")
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Sea Level (m)")
     ax.tick_params(axis='x', rotation=45)
@@ -156,7 +160,7 @@ def tidal_analysis(data, constituents, start_datetime):
                 data to extract the amplitude and phase of specified tidal constituents.
         
         Input: data-A DataFrame containing the 'Sea Level' time series to be analyzed.
-               constituents-A list of tidal consituents('M2, S2') for which amplitudes 
+               constituents-A list of tidal consituents for which amplitudes 
                and phases are to be calculated.
                start_datetime-the starting datetime of the data segment being analyzed. 
         Return:amplitudes-A dictionary where keys are the constituent names (e.g., 'M2', 'S2') 
@@ -164,8 +168,30 @@ def tidal_analysis(data, constituents, start_datetime):
                phases-A dictionary where keys are the constituent names and values are
                their calculated phases. 
     """
-
-    return 
+    # Creat a copy
+    data_cleaned = data.copy()
+    
+    # Handle NaN values
+    initial_len = len(data_cleaned)
+    data_cleaned.dropna(subset=['Sea Level'], inplace=True)
+    if len(data_cleaned) < initial_len:# check the data after cleaned
+        print(f"Removed {initial_len - len(data_cleaned)} rows with NaN values in 'Sea Level'.")
+    if data_cleaned.empty:
+        print("Error: After remobing NaNs, the data segment is empty")
+        return {}, {}
+    
+    sea_level = data_cleaned['Sea Level'].to_numpy()
+    times_64 = data_cleaned.index.to_numpy()
+    #convert start_datetime to numpy.datetime64 for calculation of times_seconds
+    start_time_ns = np.datetime64(start_datetime)
+    times_seconds = (times_64 - start_time_ns).astype('timedelta64[s]').astype(float)
+    # Set the initial time for the Tides object
+    tide_obj = uptide.Tides(constituents)
+    tide_obj.set_initial_time(start_datetime)
+    # Perform the harmonic analysis
+    amplitude, phases = uptide.harmonic_analysis(tide_obj, sea_level, times_seconds)
+    
+    return amplitude, phases
 
 def get_longest_contiguous_data(data):
     """ Function: Identify and extract the longest continuous block of 'Sea Level' data
@@ -176,20 +202,25 @@ def get_longest_contiguous_data(data):
         Return: A new DataFrame containing only the 'Sea Level' column, representing the
         longest contiguous block of valid data. 
     """
+    #use the copy to aboid modifying the original DataFrame
+    valid_data = data.copy
+    valid_data['Sea Level'] = pd.to_numeric(valid_data['Sea Level'], errors='coerce')
+    valid_data = valid_data.dropna(subset=['Sea Level'])
+    
     # Assumes the data should be hourly, identify gaps.
     expected_interval = pd.Timedelta(hours=1) 
     # Calculate the difference between consecutive timestamps
-    time_diffs = data.index.to_series().diff()
+    time_diffs = valid_data.index.to_series().diff()
     # Identify where the time difference is greater than expected_intercal
-    breaks = (time_diffs > expected_interval + pd.Timedeltal(seconds=1)).fillna(False)
+    breaks = (time_diffs > expected_interval + pd.Timedelta(seconds=1)).fillna(False)
     # Each time the break happend, the ID increments
     block_ids = breaks.cumsum()
     # Find the size of each block based on the ID
-    block_sizes = data.groupby(block_ids).size()
+    block_sizes = valid_data.groupby(block_ids).size()
     # Find the ID of the longest block
     longest_block_id = block_sizes.idxmax()
     # Extract the longest segment
-    longest_segment = data[block_ids == longest_block_id][['Sea Level']]
+    longest_segment = valid_data[block_ids == longest_block_id][['Sea Level']]
     
     return longest_segment
      
