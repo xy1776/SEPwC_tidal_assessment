@@ -6,9 +6,11 @@ to extract tidal constituents.
 """
 
 # import the modules you need here
+import argparse
 import datetime
 from datetime import timedelta
-import argparse
+import os
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt #use for  generating figures
 import numpy as np #The fundamental package for numerical computation in Python.
@@ -23,8 +25,13 @@ def read_tidal_data(filename):
         Return-pandas.DataFrame: A DataFrame with a DatetimeIndex ('Datetime') and a
                           'Sea Level' column (as float).
     """
+    # Add the data from different file.
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"Waring: File not found: {filename}.")
+
     # 'sep='\s'tells pandas to use any whitespace (spaces, tabs, newlines) as a separator.
     tide_data = pd.read_csv(filename,sep=r'\s+', header=None,skiprows=11)
+
     # Rename colums
     tide_data = tide_data.rename(columns={1: 'Date', 2: 'Time', 3: 'Sea Level', 4: 'Residual'})
 
@@ -43,12 +50,13 @@ def read_tidal_data(filename):
     tide_data['Datetime'] = pd.to_datetime(tide_data['Date'].str.strip() + ' ' + \
                                            tide_data['Time'].str.strip(), \
                                                format='%Y/%m/%d %H:%M:%S')
+
     #set 'Datetime' as index
     tide_data = tide_data.set_index('Datetime')
     #drop unecessary columns
     tide_data = tide_data.drop(columns=[0])
 
-    return tide_data
+    return tide_data[['Sea Level', 'Time']]
 
 def extract_single_year_remove_mean(year, data):
     """ Function: extract single year's data and remove the mean. 
@@ -261,3 +269,37 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirname = args.directory
     verbose = args.verbose
+
+    print(f"Start analysis for directory: {dirname}")
+    all_data_frames = []# Creat empty list.
+    FILE_COUNT = 0
+
+    if not os.path.isdir(dirname):
+        print(f"Error: The directory '{dirname}' does not exist. Exiting.")
+        sys.exit(1)
+    print(f"DEBUG: Contents of directory{dirname}: {os.listdir(dirname)}")
+
+    # Loop through files in the directory.
+    for filename_loop in os.listdir(dirname):
+        if filename_loop.lower().endswith('.txt'):
+            filepath = os.path.join(dirname, filename_loop)
+            if verbose:
+                print(f"Attempting to read file: {filepath}")
+            individual_file_data = read_tidal_data(filepath)
+            if not individual_file_data.empty:
+                all_data_frames.append(individual_file_data)
+                FILE_COUNT += 1
+            else:
+                if verbose:
+                    print(f"No data extracted form {filepath}.")
+    if FILE_COUNT == 0:
+        print("No .txt data files found or successfully processed in the directory.")
+        sys.exit(1)
+
+    # Combine the data
+    full_tidal_dataset = pd.concat(all_data_frames).sort_index()
+    if full_tidal_dataset.empty:
+        print("No tidal data collected after combined all files.")
+        sys.exit(1)
+    if verbose:
+        print("Successfully read and joined data from all files.")
