@@ -271,13 +271,14 @@ if __name__ == '__main__':
     verbose = args.verbose
 
     print(f"Start analysis for directory: {dirname}")
+    print(f"DEBUG: Contents of directory {dirname}: {os.listdir(dirname)}")
+
     all_data_frames = []# Creat empty list.
     FILE_COUNT = 0
 
     if not os.path.isdir(dirname):
         print(f"Error: The directory '{dirname}' does not exist. Exiting.")
         sys.exit(1)
-    print(f"DEBUG: Contents of directory{dirname}: {os.listdir(dirname)}")
 
     # Loop through files in the directory.
     for filename_loop in os.listdir(dirname):
@@ -286,6 +287,12 @@ if __name__ == '__main__':
             if verbose:
                 print(f"Attempting to read file: {filepath}")
             individual_file_data = read_tidal_data(filepath)
+            #debug
+            if individual_file_data.empty:
+                print(f"DEBUG: {filepath} returened an Empty DataFrame.")
+            else:
+                print(f"DEBUG: {filepath} successfully read. First row: {individual_file_data.head(1)}")
+
             if not individual_file_data.empty:
                 all_data_frames.append(individual_file_data)
                 FILE_COUNT += 1
@@ -298,6 +305,7 @@ if __name__ == '__main__':
 
     # Combine the data
     full_tidal_dataset = pd.concat(all_data_frames).sort_index()
+
     if full_tidal_dataset.empty:
         print("No tidal data collected after combined all files.")
         sys.exit(1)
